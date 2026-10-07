@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสั่งจองเสื้อสาขาวิชา</title>
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 700px; background: #fff; margin: 0 auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2, h3 { color: #8b0000; text-align: center; margin-bottom: 10px; }
+        .form-group { margin-bottom: 18px; }
+        label { font-weight: bold; display: block; margin-bottom: 6px; }
+        input[type="text"], input[type="file"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .radio-group { display: flex; gap: 15px; margin-top: 5px; }
+        
+        /* สไตล์ส่วนแสดงรูปภาพ */
+        .chart-img { width: 100%; max-width: 100%; border-radius: 8px; border: 1px solid #e0e0e0; margin: 10px 0; }
+        .qr-card { text-align: center; background: #fafafa; border: 1px dashed #ccc; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .qr-img { width: 220px; border-radius: 8px; margin-top: 10px; border: 1px solid #ddd; }
+        
+        .payment-info { background: #fff8e7; padding: 15px; border-left: 5px solid #ffb703; border-radius: 6px; margin: 20px 0; }
+        .slip-preview { max-width: 200px; max-height: 250px; display: none; margin-top: 10px; border-radius: 6px; border: 1px solid #008000; }
+        
+        button { width: 100%; background: #8b0000; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #a00000; }
+        
+        /* ใบเสร็จรับเงิน */
+        #receipt { display: none; background: #fff; border: 2px dashed #8b0000; padding: 20px; border-radius: 8px; margin-top: 25px; }
+        .receipt-header { text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        .receipt-table { width: 100%; margin: 15px 0; border-collapse: collapse; }
+        .receipt-table th, .receipt-table td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .total-price { font-size: 18px; font-weight: bold; color: #8b0000; text-align: right; }
+        .receipt-slip-img { max-width: 150px; border-radius: 6px; margin-top: 5px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>👕 ระบบสั่งจองเสื้อสาขาวิชา</h2>
+    <form id="orderForm">
+        <!-- ข้อมูลผู้ซื้อ -->
+        <div class="form-group">
+            <label>ชื่อ - นามสกุล:</label>
+            <input type="text" id="fullName" required placeholder="เช่น นายสมชาย ใจดี">
+        </div>
+        <div class="form-group">
+            <label>รหัสนักศึกษา (ใช้เป็นเลขที่ใบเสร็จ):</label>
+            <input type="text" id="studentId" required placeholder="เช่น 651234567">
+        </div>
+        <div class="form-group">
+            <label>เซคการเรียน (Sec):</label>
+            <input type="text" id="sec" required placeholder="เช่น Sec 1">
+        </div>
+
+        <hr>
+
+        <!-- รูปที่ 1: เสื้อโปโล -->
+        <h3>1. เสื้อโปโลสาขา (รูปที่ 1)</h3>
+        <p style="text-align: center; color: #666; font-size: 14px; margin: 0;">* ตารางไซส์เสื้อโปโล (เนื้อผ้า TC Lacoste)</p>
+        <img src="IMG_7754 2.jpg" alt="ตารางไซส์เสื้อโปโล" class="chart-img" onerror="this.src='https://via.placeholder.com/600x400?text=Polo+Size+Chart';">
+        <div class="form-group">
+            <label>ประเภทเสื้อ:</label>
+            <div class="radio-group">
+                <label><input type="radio" name="isMuslim" value="false" checked onclick="calculateTotal()"> บุคคลทั่วไป (330 บาท)</label>
+                <label><input type="radio" name="isMuslim" value="true" onclick="calculateTotal()"> ชาวมุสลิม/แขนยาว (400 บาท)</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>ไซส์เสื้อโปโล (ไซส์ 3XL ขึ้นไปปรับเป็น 400 บาทอัตโนมัติ):</label>
+            <select id="poloSize" onchange="calculateTotal()">
+                <option value="SS">SS (รอบอก 34")</option>
+                <option value="S">S (รอบอก 36")</option>
+                <option value="M">M (รอบอก 38")</option>
+                <option value="L">L (รอบอก 40")</option>
+                <option value="XL">XL (รอบอก 42")</option>
+                <option value="2XL">2XL (รอบอก 44")</option>
+                <option value="3XL">3XL (รอบอก 46") - 400 บาท</option>
+                <option value="4XL">4XL (รอบอก 48") - 400 บาท</option>
+                <option value="5XL">5XL (รอบอก 50") - 400 บาท</option>
+                <option value="6XL">6XL (รอบอก 52") - 400 บาท</option>
+            </select>
+        </div>
+
+        <hr>
+
+        <!-- รูปที่ 2: เสื้อแจ็คเก็ต -->
+        <h3>2. เสื้อแจ็คเก็ตมีหมวก (รูปที่ 2)</h3>
+        <p style="text-align: center; color: #666; font-size: 14px; margin: 0;">* ตารางไซส์เสื้อแจ็คเก็ต CR Clothing</p>
+        <img src="IMG_7753.jpg" alt="ตารางไซส์เสื้อแจ็คเก็ต" class="chart-img" onerror="this.src='https://via.placeholder.com/600x400?text=Jacket+Size+Chart';">
+        <div class="form-group">
+            <label>การเลือกสั่งซื้อแจ็คเก็ต:</label>
+            <select id="buyJacket" onchange="toggleJacketSize(); calculateTotal();">
+                <option value="false">ไม่ต้องการสั่งซื้อ</option>
+                <option value="true">สั่งซื้อเสื้อแจ็คเก็ต (ราคา 1,190 บาท)</option>
+            </select>
+        </div>
+        <div class="form-group" id="jacketSizeGroup" style="display: none;">
+            <label>ไซส์เสื้อแจ็คเก็ต:</label>
+            <select id="jacketSize">
+                <option value="S">S (รอบอก 40")</option>
+                <option value="M">M (รอบอก 42")</option>
+                <option value="L">L (รอบอก 44")</option>
+                <option value="XL">XL (รอบอก 46")</option>
+                <option value="2XL">2XL (รอบอก 48")</option>
+                <option value="3XL">3XL (รอบอก 50")</option>
+            </select>
+        </div>
+
+        <hr>
+
+        <!-- ระบบการผ่อนชำระ -->
+        <h3>3. รูปแบบการชำระเงิน</h3>
+        <div class="form-group">
+            <div class="radio-group">
+                <label><input type="radio" name="isInstallment" value="false" checked onclick="calculateTotal()"> ชำระเต็มจำนวน</label>
+                <label><input type="radio" name="isInstallment" value="true" onclick="calculateTotal()"> ระบบผ่อนชำระ</label>
+            </div>
+            <small style="color: #666;">* เลือกระบบผ่อน: ยอดรวม = ราคาเสื้อโปโล + (ครึ่งหนึ่งของราคาแจ็คเก็ต 595 บาท)</small>
+        </div>
+
+        <!-- ชำระเงิน & รูปที่ 3: QR Code -->
+        <div class="payment-info">
+            <h4>💳 ช่องทางการชำระเงิน</h4>
+            <p><b>ธนาคารกสิกรไทย:</b> เลขที่บัญชี <b style="color: #8b0000; font-size: 18px;">189-3-47937-2</b></p>
+            <div class="qr-card">
+                <p><b>หรือ สแกน PromptPay QR Code (รูปที่ 3)</b></p>
+                <p style="font-size: 13px; color: #555;">น.ส. อัจจิมา นิลเนตรานนท์ (MAKE by KBank)</p>
+                <img src="IMG_8643.JPG" alt="QR Code Payment" class="qr-img" onerror="this.src='https://via.placeholder.com/250x300?text=QR+Code';">
+            </div>
+        </div>
+
+        <!-- ช่องแนบสลิปโอนเงิน -->
+        <div class="form-group" style="background: #eef7ff; padding: 15px; border-radius: 8px; border: 1px solid #b6d4fe;">
+            <label>📎 แนบหลักฐานการโอนเงิน (สลิปโอนเงิน):</label>
+            <input type="file" id="slipInput" accept="image/*" onchange="previewSlip(event)" required>
+            <img id="slipPreview" class="slip-preview" alt="ตัวอย่างสลิป">
+        </div>
+
+        <button type="button" onclick="submitOrder()">ยืนยันการสั่งซื้อและออกใบเสร็จ</button>
+    </form>
+
+    <!-- ใบเสร็จรับเงิน -->
+    <div id="receipt">
+        <div class="receipt-header">
+            <h2>🧾 ใบเสร็จรับเงิน / RECEIPT</h2>
+            <p><b>เลขที่ใบเสร็จ:</b> <span id="recNo"></span></p>
+            <p><b>ชื่อผู้ซื้อ:</b> <span id="recName"></span> | <b>Sec:</b> <span id="recSec"></span></p>
+        </div>
+        <table class="receipt-table">
+            <thead>
+                <tr>
+                    <th>รายการ</th>
+                    <th>รายละเอียด / ไซส์</th>
+                    <th>จำนวนเงิน (บาท)</th>
+                </tr>
+            </thead>
+            <tbody id="recItems">
+            </tbody>
+        </table>
+        <p class="total-price">ยอดรวมชำระทั้งสิ้น: <span id="recTotal"></span> บาท</p>
+        <div style="text-align: center; margin-top: 15px;">
+            <p style="margin-bottom: 5px; font-weight: bold;">หลักฐานการชำระเงิน:</p>
+            <img id="receiptSlipImg" class="receipt-slip-img" src="" alt="สลิปที่แนบ">
+        </div>
+        <p style="text-align: center; color: green; font-weight: bold; margin-top: 15px;">✅ บันทึกข้อมูลเข้า Google Sheets เรียบร้อยแล้ว</p>
+    </div>
+</div>
+
+<script>
+    // **นำ Web App URL จาก Google Apps Script มาวางแทนที่ค่านี้**
+    const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+    let slipDataUrl = "";
+
+    function toggleJacketSize() {
+        const buyJacket = document.getElementById('buyJacket').value === 'true';
+        document.getElementById('jacketSizeGroup').style.display = buyJacket ? 'block' : 'none';
+    }
+
+    function calculateTotal() {
+        // เสื้อโปโล (รูปที่ 1)
+        const isMuslim = document.querySelector('input[name="isMuslim"]:checked').value === 'true';
+        const poloSize = document.getElementById('poloSize').value;
+        const oversizeList = ['3XL', '4XL', '5XL', '6XL'];
+        
+        let poloPrice = 330;
+        if (isMuslim || oversizeList.includes(poloSize)) {
+            poloPrice = 400;
+        }
+
+        // เสื้อแจ็คเก็ต (รูปที่ 2)
+        const buyJacket = document.getElementById('buyJacket').value === 'true';
+        let jacketPrice = buyJacket ? 1190 : 0;
+
+        // ผ่อนชำระ
+        const isInstallment = document.querySelector('input[name="isInstallment"]:checked').value === 'true';
+        let totalPrice = 0;
+
+        if (isInstallment) {
+            totalPrice = poloPrice + (jacketPrice / 2);
+        } else {
+            totalPrice = poloPrice + jacketPrice;
+        }
+
+        return { poloPrice, jacketPrice, totalPrice, isMuslim, buyJacket, isInstallment, poloSize };
+    }
+
+    function previewSlip(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                slipDataUrl = e.target.result;
+                const previewImg = document.getElementById('slipPreview');
+                previewImg.src = slipDataUrl;
+                previewImg.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function submitOrder() {
+        const fullName = document.getElementById('fullName').value.trim();
+        const studentId = document.getElementById('studentId').value.trim();
+        const sec = document.getElementById('sec').value.trim();
+        const slipInput = document.getElementById('slipInput');
+
+        if (!fullName || !studentId || !sec) {
+            alert('กรุณากรอกข้อมูล ชื่อ-นามสกุล, รหัสนักศึกษา และเซคเรียน ให้ครบถ้วน');
+            return;
+        }
+
+        if (slipInput.files.length === 0) {
+            alert('กรุณาแนบสลิปโอนเงินก่อนทำการสั่งซื้อ');
+            return;
+        }
+
+        const calc = calculateTotal();
+        const jacketSize = document.getElementById('jacketSize').value;
+
+        const payload = {
+            studentId: studentId,
+            fullName: fullName,
+            sec: sec,
+            isMuslim: calc.isMuslim,
+            poloSize: calc.poloSize,
+            poloPrice: calc.poloPrice,
+            buyJacket: calc.buyJacket,
+            jacketSize: calc.buyJacket ? jacketSize : "-",
+            jacketPrice: calc.jacketPrice,
+            isInstallment: calc.isInstallment,
+            totalPrice: calc.totalPrice,
+            hasSlip: slipInput.files.length > 0
+        };
+
+        // ส่งข้อมูลเข้า Google Sheets
+        try {
+            if (GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+        } catch (error) {
+            console.error("Error sending to Google Sheet:", error);
+        }
+
+        // แสดงผลใบเสร็จรับเงิน
+        document.getElementById('recNo').innerText = studentId;
+        document.getElementById('recName').innerText = fullName;
+        document.getElementById('recSec').innerText = sec;
+
+        let itemsHtml = `
+            <tr>
+                <td>เสื้อโปโลสาขา (${calc.isMuslim ? 'มุสลิม/แขนยาว' : 'บุคคลทั่วไป'})</td>
+                <td>ไซส์ ${calc.poloSize}</td>
+                <td>${calc.poloPrice}</td>
+            </tr>
+        `;
+
+        if (calc.buyJacket) {
+            let displayedJacketPrice = calc.isInstallment ? (calc.jacketPrice / 2) + " (ผ่อนชำระ 50%)" : calc.jacketPrice;
+            itemsHtml += `
+                <tr>
+                    <td>เสื้อแจ็คเก็ตมีหมวก</td>
+                    <td>ไซส์ ${jacketSize}</td>
+                    <td>${displayedJacketPrice}</td>
+                </tr>
+            `;
+        }
+
+        itemsHtml += `
+            <tr>
+                <td colspan="2"><b>รูปแบบชำระเงิน</b></td>
+                <td><b>${calc.isInstallment ? 'ผ่อนชำระ' : 'ชำระเต็มจำนวน'}</b></td>
+            </tr>
+        `;
+
+        document.getElementById('recItems').innerHTML = itemsHtml;
+        document.getElementById('recTotal').innerText = calc.totalPrice.toLocaleString();
+        
+        if (slipDataUrl) {
+            document.getElementById('receiptSlipImg').src = slipDataUrl;
+        }
+
+        document.getElementById('receipt').style.display = 'block';
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
